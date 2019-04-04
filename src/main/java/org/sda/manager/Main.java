@@ -1,36 +1,32 @@
 package org.sda.manager;
 
 import java.io.Console;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
 import org.sda.manager.authentication.model.User;
-import org.sda.manager.validation.Validators;
 
 public class Main {
 
-  List<String> stringList = Arrays.asList("string1", "string2");
-  List<User> userList = Arrays.asList(
+  private static final int NOT_FOUND = 9991;
+
+  private List<User> userList = Arrays.asList(
       new User("name1", "password1"),
       new User("name2", "password2"),
-      new User("name3", "password3"));
-
+      new User("name3", "password3"),
+      new User("name4", "password4"));
   //  private static final Logger logger = Logger.getLogger(Main.class);
 //  private static AuthService authService = new AuthServiceImpl();
-  Scanner scanner = new Scanner(System.in);
+  private Console console;
+
+  public Main() {
+    this.console = System.console();
+  }
 
   public static void main(String[] args) {
     Main main = new Main();
-    System.out.println("Started.");
-    main.validationExample();
-    User userExample = new User("User", "Password");
-    boolean authenticated = main.authenticationExample(userExample);
-    main.scanNextIntExample();
-    main.logInExample(args);
-    main.menuExample(args);
-    System.out.println("Done.");
+    main.runApp(args);
   }
 
   public static void main15(String[] args) {
@@ -44,111 +40,118 @@ public class Main {
     System.out.println(s);
   }
 
-  public static void main1(String[] args) throws IOException {
-    System.out.println("World");
-    Scanner scanner = new Scanner(System.in);
-    boolean isClosed = false;
-    while (!isClosed) {
-      System.out.println("Hello user: Tomek");
-      System.out.println("This is menu:\n1. Do something1\n2.Exit");
-      int digit = scanner.nextInt();
-      switch (digit) {
-        case 1:
-//          doSomething1();
-          System.out.println("Did something!");
-          break;
-        case 2:
-          isClosed = true;
-          break;
-        default:
-          System.out.println("Wrong input, try again");
-          break;
-      }
+  private static void showUserDetails(User user) {
+    System.out.println("User's " + user.getName() + " details: ");
+    System.out.println(user);
+  }
+
+  private void runApp(String[] args) {
+    String userName;
+    char[] password;
+    if (args.length == 0) {
+      signedOutView();
+      return;
+    } else if (args.length == 2) {
+      userName = args[0];
+      password = args[1].toCharArray();
+    } else {
+      throw new IllegalStateException("Invalid number of arguments: " + args.length);
+    }
+    User user = new User(userName, password);
+    boolean authenticated = isUserAuthenticated(user);
+    if (authenticated) {
+      userDetailsView(user);
+    } else {
+      signedOutView();
     }
   }
 
-  public static void mainTernaryOperator(String[] args) {
-    new Main().getName(1);
-    new Main().getNameTernary(1);
-  }
-
-  public static void main18(String[] args) {
-
-  }
-
-  private static void showUserDetails() {
-    System.out.println("User details.");
-  }
-
-  private void menuExample(String[] args) {
-    String username = "Tom Jerry";
-    System.out.println("Hello user: " + username);
-    System.out.println("Select one of the following options: ");
-    System.out.println("1. User details.");
-    System.out.println("2. Log out.");
-    Scanner scanner = new Scanner(System.in);
+  private void signedOutView() {
     boolean finish = false;
-    while (!finish) {
-      try {
-        int option = scanner.nextInt();
+    try (Scanner scanner = new Scanner(System.in)) {
+      while (!finish) {
+        System.out.println("###########################");
+        System.out.println("# Welcome!");
+        System.out.println("###########################");
+        System.out.println("# Select one of the following options: ");
+        System.out.println("# 1. Sign in.");
+        System.out.println("# 2. List users.");
+        System.out.println("# 3. Exit.");
+        int option = scanNextInt(scanner);
         switch (option) {
           case 1:
-            showUserDetails();
+            System.out.println("Enter user name:");
+            String userName = scanner.nextLine();
+            System.out.println("Enter password:");
+            char[] password = console.readPassword();
+            User user = new User(userName, password);
+            if (isUserAuthenticated(user)) {
+              finish = true;
+              userDetailsView(user);
+            } else {
+              System.out.println("Invalid credentials!");
+            }
             break;
           case 2:
+            showUserList();
+            break;
+          case 3:
             finish = true;
             break;
           default:
             System.out.println("Command not found.");
             break;
         }
-      } catch (InputMismatchException e) {
-        System.out.println("Invalid input, please try again");
-        scanner.next();
       }
     }
-    System.out.println("Bye bye " + username);
   }
 
-  /**
-   * To console only sout, log to log.
-   */
-  private void logInExample(String[] args) {
-    String userName = "test";
-    char[] password = "password".toCharArray();
-    if (args.length > 0) {
-      if (args.length == 2) {
-        userName = args[0];
-        password = args[1].toCharArray();
-      } else {
-        throw new IllegalArgumentException("Two arguments are required. Found: " + args.length);
+  private void userDetailsView(final User user) {
+    boolean finish = false;
+    try (Scanner scanner = new Scanner(System.in)) {
+      while (!finish) {
+        System.out.println("###########################");
+        System.out.println("# Welcome: " + user.getName());
+        System.out.println("###########################");
+        System.out.println("# Select one of the following options: ");
+        System.out.println("# 1. User details.");
+        System.out.println("# 2. User list.");
+        System.out.println("# 3. Log out.");
+        int option = scanNextInt(scanner);
+        switch (option) {
+          case 1:
+            showUserDetails(user);
+            break;
+          case 2:
+            showUserList();
+            break;
+          case 3:
+            System.out.println("Bye bye: " + user.getName());
+            finish = true;
+            signedOutView();
+            break;
+          default:
+            System.out.println("Command not found.");
+            break;
+        }
       }
-    } else {
-      Scanner scanner = new Scanner(System.in);
-      System.out.println("Enter user name:");
-      userName = scanner.nextLine();
-      Console console = System.console();
-      userName = console.readLine("Enter user name: ");
-      password = console.readPassword("Enter your password: ");
     }
-    User user = new User(userName, password);
-    System.out.println("Logged as: " + userName + ", password: " + new String(password));
-//    logger.debug("Logged as: " + user);
-//    boolean success = authService.isAuthenticated(user, new SHA256());
-//    logger.debug("User was " + (success ? "" : "not ") + "successfully authenticated");
   }
 
-  private void validationExample() {
-    String password = "Abc";
-    boolean success = Validators.validatePassword(password);
+  private void closeApp() {
+    System.out.println("Bye bye!");
   }
 
-  private boolean authenticationExample(User user) {
-    if (userList.contains(user)) {
-      return true;
-    } else {
-      return false;
+  private void showUserList() {
+    System.out.println("User list:");
+    int i = 0;
+    for (User user : userList) {
+      System.out.println(++i + ". " + user.getName());
     }
+  }
+
+  private boolean isUserAuthenticated(User user) {
+    return userList.contains(user);
   }
 
   private void loggerExample(String[] args) {
@@ -160,24 +163,16 @@ public class Main {
 //    logger.fatal("Fatal Message!");
   }
 
-  private int scanNextIntExample() {
-    System.out.println("Enter integer value.");
-    int i = scanner.nextInt();
-    scanner.nextLine();
-    return i;
-  }
-
-  public String getName(int number) {
-    String s = null;
-    if (number == 0) {
-      s = "this is 0";
-    } else {
-      s = "more than 0";
+  private int scanNextInt(Scanner scanner) {
+    try {
+      System.out.println("Enter integer value:");
+      int i = scanner.nextInt();
+      scanner.nextLine();
+      return i;
+    } catch (InputMismatchException e) {
+      System.out.println("Invalid input, please try again");
+      scanner.nextLine();
+      return NOT_FOUND;
     }
-    return s;
-  }
-
-  public String getNameTernary(int number) {
-    return number == 0 ? "this is 0" : "more than 0";
   }
 }

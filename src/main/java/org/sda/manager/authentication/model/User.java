@@ -43,7 +43,6 @@ public class User {
   public String toString() {
     return "User{" +
         "name='" + name + '\'' +
-        ", password=" + Arrays.toString(password) +
         ", address=" + address +
         '}';
   }
