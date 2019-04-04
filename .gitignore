@@ -13,6 +13,9 @@
 # Target
 target/
 
+# Workspace
+.idea/workspace.xml
+
 # Package Files #
 *.jar
 *.war
