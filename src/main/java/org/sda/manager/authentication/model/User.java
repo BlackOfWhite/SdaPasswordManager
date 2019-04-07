@@ -3,21 +3,36 @@ package org.sda.manager.authentication.model;
 import java.util.Arrays;
 import java.util.Objects;
 
-public class User {
+public class User implements Comparable<User> {
 
   private String name;
   private char[] password;
   private Address address;
+  private String email;
 
   public User(String name, char[] password) {
     this.name = name;
     this.password = password;
   }
+
   public User(String name, String password) {
     this.name = name;
     this.password = password.toCharArray();
   }
 
+  public User(String name, String email, char[] password) {
+    this.name = name;
+    this.password = password;
+    this.email = email;
+  }
+
+  public String getEmail() {
+    return email;
+  }
+
+  public void setEmail(String email) {
+    this.email = email;
+  }
 
   public String getName() {
     return name;
@@ -43,7 +58,9 @@ public class User {
   public String toString() {
     return "User{" +
         "name='" + name + '\'' +
+        ", password=" + Arrays.toString(password) +
         ", address=" + address +
+        ", email='" + email + '\'' +
         '}';
   }
 
@@ -64,5 +81,15 @@ public class User {
     int result = Objects.hash(name, address);
     result = 31 * result + Arrays.hashCode(password);
     return result;
+  }
+
+  @Override
+  public int compareTo(User o) {
+    int result = this.getName().compareTo(o.getName());
+    if (result == 0) {
+      return new String(this.getPassword()).compareTo(new String(o.getPassword()));
+    } else {
+      return result;
+    }
   }
 }

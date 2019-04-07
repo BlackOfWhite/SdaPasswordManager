@@ -2,47 +2,81 @@ package org.sda.manager;
 
 import java.io.Console;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
+import org.apache.log4j.Logger;
+import org.sda.manager.authentication.AuthService;
+import org.sda.manager.authentication.AuthServiceImpl;
+import org.sda.manager.authentication.hash.impl.SHA256;
 import org.sda.manager.authentication.model.User;
+import org.sda.manager.comparators.UserComparator;
+import org.sda.manager.database.UsersServiceImpl;
+import org.sda.manager.database.services.UsersService;
+import org.sda.manager.database.tables.UserTable;
+import org.sda.manager.validation.Validators;
 
 public class Main {
 
   private static final int NOT_FOUND = 9991;
+  private static final Logger logger = Logger.getLogger(Main.class);
 
-  private List<User> userList = Arrays.asList(
-      new User("name1", "password1"),
-      new User("name2", "password2"),
-      new User("name3", "password3"),
-      new User("name4", "password4"));
-  //  private static final Logger logger = Logger.getLogger(Main.class);
-//  private static AuthService authService = new AuthServiceImpl();
+  private static AuthService authService = new AuthServiceImpl();
+  private static UsersService usersService = new UsersServiceImpl();
   private Console console;
 
   public Main() {
     this.console = System.console();
   }
 
+  public static void main22(String[] args) {
+    List<String> list = Arrays.asList("some", "random", "text", "values", "and", "digits");
+    Collections.sort(list);
+
+    List<User> uList = Arrays.asList(
+        new User("name3", "password1"),
+        new User("name2", "password2"),
+        new User("name2", "password3"),
+        new User("name1", "password4"));
+    Collections.sort(uList, new UserComparator());
+    System.out.println(uList);
+
+//    List<Integer> iList = Arrays.asList(1, 5, 4, 3, 2, 1);
+//    Collections.sort(iList);
+//    System.out.println(iList);
+//
+
+    Collections.sort(uList, new UserComparator());
+    System.out.println("uList = " + uList);
+//    Collections.sort(uList, new UserComparator());
+//    System.out.println(uList);
+  }
+
+  public static void main2(String[] args) {
+    String s = Integer.toHexString('l');
+    System.out.println(s);
+  }
+
   public static void main(String[] args) {
+//    usersService.findAllUsers();
     Main main = new Main();
     main.runApp(args);
   }
 
-  public static void main15(String[] args) {
-    for (String s : args) {
-      System.out.println("Arg: " + s);
-    }
-  }
-
-  public static void main23(String[] args) {
-    String s = Integer.toHexString('j');
-    System.out.println(s);
-  }
 
   private static void showUserDetails(User user) {
     System.out.println("User's " + user.getName() + " details: ");
     System.out.println(user);
+  }
+
+  private static void loggerExample(String[] args) {
+    logger.trace("Trace Message!");
+    logger.debug("Debug Message!");
+    logger.info("Info Message!");
+    logger.warn("Warn Message!");
+    logger.error("Error Message!");
+    logger.fatal("Fatal Message!");
   }
 
   private void runApp(String[] args) {
@@ -75,8 +109,9 @@ public class Main {
         System.out.println("###########################");
         System.out.println("# Select one of the following options: ");
         System.out.println("# 1. Sign in.");
-        System.out.println("# 2. List users.");
-        System.out.println("# 3. Exit.");
+        System.out.println("# 2. Sign up.");
+        System.out.println("# 3. List users.");
+        System.out.println("# 4. Exit.");
         int option = scanNextInt(scanner);
         switch (option) {
           case 1:
@@ -90,12 +125,16 @@ public class Main {
               userDetailsView(user);
             } else {
               System.out.println("Invalid credentials!");
+              logger.warn("Failed to log in: " + user);
             }
             break;
           case 2:
-            showUserList();
+            signUp(scanner);
             break;
           case 3:
+            showUserList();
+            break;
+          case 4:
             finish = true;
             break;
           default:
@@ -104,6 +143,36 @@ public class Main {
         }
       }
     }
+  }
+
+  private void signUp(Scanner scanner) {
+    System.out.println("Enter new user name:");
+    String userName = scanner.nextLine();
+    System.out.println("Enter new password:");
+    char[] password = console.readPassword();
+    System.out.println("Enter user mail:");
+    String email = scanner.nextLine();
+    User user = new User(userName, email, password);
+    if (!Validators.validateEmail(email)) {
+      System.out.println("Invalid email address.");
+      return;
+    }
+    if (!isUserAlreadyPresent(user)) {
+      System.out.println("Successfully created user: " + userName);
+      logger.info("Created new user: " + user);
+    } else {
+      System.out.println("Unable to create user.");
+      logger.info("Failed to created new user: " + user);
+    }
+  }
+
+  private boolean isUserAlreadyPresent(User user) {
+    for (UserTable user1 : usersService.findAllUsers()) {
+      if (user.getName().equalsIgnoreCase(user1.getUserName())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private void userDetailsView(final User user) {
@@ -145,22 +214,13 @@ public class Main {
   private void showUserList() {
     System.out.println("User list:");
     int i = 0;
-    for (User user : userList) {
-      System.out.println(++i + ". " + user.getName());
+    for (UserTable user : usersService.findAllUsers()) {
+      System.out.println(++i + ". " + user.getUserName());
     }
   }
 
   private boolean isUserAuthenticated(User user) {
-    return userList.contains(user);
-  }
-
-  private void loggerExample(String[] args) {
-//    logger.trace("Trace Message!");
-//    logger.debug("Debug Message!");
-//    logger.info("Info Message!");
-//    logger.warn("Warn Message!");
-//    logger.error("Error Message!");
-//    logger.fatal("Fatal Message!");
+    return authService.isAuthenticated(user, new SHA256());
   }
 
   private int scanNextInt(Scanner scanner) {
@@ -171,6 +231,7 @@ public class Main {
       return i;
     } catch (InputMismatchException e) {
       System.out.println("Invalid input, please try again");
+      logger.debug("User eneter invalid data type: ", e);
       scanner.nextLine();
       return NOT_FOUND;
     }
