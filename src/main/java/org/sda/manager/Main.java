@@ -14,7 +14,9 @@ import org.sda.manager.authentication.model.User;
 import org.sda.manager.comparators.UserComparator;
 import org.sda.manager.database.UsersServiceImpl;
 import org.sda.manager.database.services.UsersService;
-import org.sda.manager.database.tables.UserTable;
+import org.sda.manager.database.tables.UserTableRow;
+import org.sda.manager.exceptions.DatabaseIntegrityException;
+import org.sda.manager.exceptions.UserNotFoundException;
 import org.sda.manager.validation.Validators;
 
 public class Main {
@@ -42,24 +44,11 @@ public class Main {
     Collections.sort(uList, new UserComparator());
     System.out.println(uList);
 
-//    List<Integer> iList = Arrays.asList(1, 5, 4, 3, 2, 1);
-//    Collections.sort(iList);
-//    System.out.println(iList);
-//
-
     Collections.sort(uList, new UserComparator());
     System.out.println("uList = " + uList);
-//    Collections.sort(uList, new UserComparator());
-//    System.out.println(uList);
-  }
-
-  public static void main2(String[] args) {
-    String s = Integer.toHexString('l');
-    System.out.println(s);
   }
 
   public static void main(String[] args) {
-//    usersService.findAllUsers();
     Main main = new Main();
     main.runApp(args);
   }
@@ -152,22 +141,26 @@ public class Main {
     char[] password = console.readPassword();
     System.out.println("Enter user mail:");
     String email = scanner.nextLine();
-    User user = new User(userName, email, password);
+    System.out.println("Enter user country:");
+    String country = scanner.nextLine();
+    User user = new User(userName, email, password, country);
     if (!Validators.validateEmail(email)) {
       System.out.println("Invalid email address.");
       return;
     }
-    if (!isUserAlreadyPresent(user)) {
-      System.out.println("Successfully created user: " + userName);
-      logger.info("Created new user: " + user);
-    } else {
+    try {
+      if (usersService.registerNewUser(user)) {
+        System.out.println("Successfully created user: " + userName);
+        logger.info("Created new user: " + user);
+      }
+    } catch (DatabaseIntegrityException e) {
       System.out.println("Unable to create user.");
       logger.info("Failed to created new user: " + user);
     }
   }
 
   private boolean isUserAlreadyPresent(User user) {
-    for (UserTable user1 : usersService.findAllUsers()) {
+    for (UserTableRow user1 : usersService.findAllUsers()) {
       if (user.getName().equalsIgnoreCase(user1.getUserName())) {
         return true;
       }
@@ -185,7 +178,8 @@ public class Main {
         System.out.println("# Select one of the following options: ");
         System.out.println("# 1. User details.");
         System.out.println("# 2. User list.");
-        System.out.println("# 3. Log out.");
+        System.out.println("# 3. Delete account.");
+        System.out.println("# 4. Log out.");
         int option = scanNextInt(scanner);
         switch (option) {
           case 1:
@@ -195,6 +189,18 @@ public class Main {
             showUserList();
             break;
           case 3:
+            try {
+              boolean success = usersService.removeUser(user);
+              if (success) {
+                logger.debug("Successfully removed user: " + user);
+                finish = true;
+                signedOutView();
+              }
+            } catch (UserNotFoundException e) {
+              logger.warn("Unable to remove user: '" + user);
+            }
+            break;
+          case 4:
             System.out.println("Bye bye: " + user.getName());
             finish = true;
             signedOutView();
@@ -214,7 +220,7 @@ public class Main {
   private void showUserList() {
     System.out.println("User list:");
     int i = 0;
-    for (UserTable user : usersService.findAllUsers()) {
+    for (UserTableRow user : usersService.findAllUsers()) {
       System.out.println(++i + ". " + user.getUserName());
     }
   }

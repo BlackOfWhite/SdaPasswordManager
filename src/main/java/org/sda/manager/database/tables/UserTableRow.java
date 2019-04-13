@@ -1,17 +1,31 @@
 package org.sda.manager.database.tables;
 
-public class UserTable {
+import org.sda.manager.authentication.hash.impl.SHA256;
+import org.sda.manager.authentication.model.User;
+
+public class UserTableRow {
 
   private String userName;
   private String hash;
   private String country;
   private String email;
 
-  public UserTable(String userName, String email, String country, String hash) {
+  public UserTableRow(String userName, String email, String country, String hash) {
     this.userName = userName;
     this.hash = hash;
     this.country = country;
     this.email = email;
+  }
+
+  public UserTableRow(User user) {
+    this.userName = user.getName();
+    this.hash = new SHA256().hash(user.getPassword());
+    this.country = user.getCountry();
+    this.email = user.getEmail();
+  }
+
+  public String[] toRow() {
+    return new String[]{userName, email, country, hash};
   }
 
   public String getUserName() {
@@ -48,7 +62,7 @@ public class UserTable {
 
   @Override
   public String toString() {
-    return "UserTable{" +
+    return "UserTableRow{" +
         "userName='" + userName + '\'' +
         ", hash='" + hash + '\'' +
         ", country='" + country + '\'' +
