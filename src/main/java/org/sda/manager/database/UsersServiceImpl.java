@@ -1,10 +1,14 @@
 package org.sda.manager.database;
 
 import java.util.List;
+import java.util.Optional;
 import org.sda.manager.authentication.model.User;
 import org.sda.manager.database.services.UsersService;
+import org.sda.manager.database.tables.PasswordTableRow;
 import org.sda.manager.database.tables.UserTableRow;
 import org.sda.manager.exceptions.DatabaseIntegrityException;
+import org.sda.manager.exceptions.NoPasswordsFoundException;
+import org.sda.manager.exceptions.PasswordNotFoundException;
 import org.sda.manager.exceptions.UserNotFoundException;
 
 public class UsersServiceImpl implements UsersService {
@@ -34,13 +38,25 @@ public class UsersServiceImpl implements UsersService {
     List<UserTableRow> rows = findAllUsers();
     for (UserTableRow row : rows) {
       if (row.getUserName().equals(user.getName())) {
-        throw new DatabaseIntegrityException();
+        throw new DatabaseIntegrityException("Username already exists!");
       }
       if (row.getEmail().equals(user.getEmail())) {
-        throw new DatabaseIntegrityException();
+        throw new DatabaseIntegrityException("Email already exists!");
       }
     }
-    return DatabaseManager.getInstance().createUser(new UserTableRow(user));
+    UserTableRow userTableRow = new UserTableRow(user);
+    userTableRow.setId(getNewValidUserId());
+    return DatabaseManager.getInstance().createUser(userTableRow);
+  }
+
+  @Override
+  public boolean editUser(final User user) throws UserNotFoundException {
+    String userId = findUserByName(user.getName()).getId();
+    UserTableRow newRow = new UserTableRow(user);
+    newRow.setId(userId);
+    removeUser(user);
+    DatabaseManager.getInstance().createUser(newRow);
+    return true;
   }
 
   @Override
@@ -50,9 +66,34 @@ public class UsersServiceImpl implements UsersService {
     return DatabaseManager.getInstance().deleteUser(row);
   }
 
-  public void editUser(User user) {
-
+  @Override
+  public List<PasswordTableRow> findAllUserPasswords(User user) throws UserNotFoundException, NoPasswordsFoundException {
+    // Check if user exists, if doesn't throw exception
+    UserTableRow userTableRow = findUserByName(user.getName());
+    return DatabaseManager.getInstance().getAllPasswordsForUser(userTableRow.getId());
   }
 
+  @Override
+  public PasswordTableRow findUserPasswordById(User user, int passwordId)
+      throws PasswordNotFoundException, NoPasswordsFoundException, UserNotFoundException {
+    List<PasswordTableRow> passwords = findAllUserPasswords(user);
+    for (PasswordTableRow row : passwords) {
+      if (row.getId().equals(String.valueOf(passwordId))) {
+        return row;
+      }
+    }
+    throw new PasswordNotFoundException();
+  }
 
+  private String getNewValidUserId() {
+    Optional<Integer> max = findAllUsers().stream()
+        .map(userTableRow -> userTableRow.getId())
+        .map(s -> Integer.parseInt(s))
+        .max(Integer::compareTo);
+    if (max.isPresent()) {
+      return String.valueOf(max.get() + 1);
+    } else {
+      return "1";
+    }
+  }
 }

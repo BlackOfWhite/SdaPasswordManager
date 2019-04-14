@@ -26,6 +26,15 @@ public class User implements Comparable<User> {
     this.country = country;
   }
 
+
+  public void setPassword(char[] password) {
+    this.password = password;
+  }
+
+  public void setCountry(String country) {
+    this.country = country;
+  }
+
   public String getEmail() {
     return email;
   }

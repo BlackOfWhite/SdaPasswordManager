@@ -5,12 +5,14 @@ import org.sda.manager.authentication.model.User;
 
 public class UserTableRow {
 
+  private String id;
   private String userName;
   private String hash;
   private String country;
   private String email;
 
-  public UserTableRow(String userName, String email, String country, String hash) {
+  public UserTableRow(String id, String userName, String email, String country, String hash) {
+    this.id = id;
     this.userName = userName;
     this.hash = hash;
     this.country = country;
@@ -18,14 +20,23 @@ public class UserTableRow {
   }
 
   public UserTableRow(User user) {
+    this.id = "";
     this.userName = user.getName();
     this.hash = new SHA256().hash(user.getPassword());
     this.country = user.getCountry();
     this.email = user.getEmail();
   }
 
+  public String getId() {
+    return id;
+  }
+
+  public void setId(String id) {
+    this.id = id;
+  }
+
   public String[] toRow() {
-    return new String[]{userName, email, country, hash};
+    return new String[]{id, userName, email, country, hash};
   }
 
   public String getUserName() {
@@ -63,7 +74,8 @@ public class UserTableRow {
   @Override
   public String toString() {
     return "UserTableRow{" +
-        "userName='" + userName + '\'' +
+        "id='" + id + '\'' +
+        ", userName='" + userName + '\'' +
         ", hash='" + hash + '\'' +
         ", country='" + country + '\'' +
         ", email='" + email + '\'' +

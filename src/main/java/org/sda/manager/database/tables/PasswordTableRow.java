@@ -1,55 +1,65 @@
 package org.sda.manager.database.tables;
 
-import org.sda.manager.authentication.hash.impl.SHA256;
-import org.sda.manager.authentication.model.User;
+public class PasswordTableRow {
 
-public class UserTableRow {
-
-  private String userName;
-  private String hash;
-  private String country;
+  private String id;
+  private String title;
+  private String desc;
   private String email;
+  private String url;
+  private String password;
+  private RotType rotType;
+  private String userId;
 
-  public UserTableRow(String userName, String email, String country, String hash) {
-    this.userName = userName;
-    this.hash = hash;
-    this.country = country;
-    this.email = email;
+  public PasswordTableRow(String id, String userId, String title, RotType rotType, String password) {
+    this.id = id;
+    this.userId = userId;
+    this.title = title;
+    this.rotType = rotType;
+    this.password = password;
   }
 
-  public UserTableRow(User user) {
-    this.userName = user.getName();
-    this.hash = new SHA256().hash(user.getPassword());
-    this.country = user.getCountry();
-    this.email = user.getEmail();
+  public PasswordTableRow desc(String description) {
+    setDesc(description);
+    return this;
   }
 
-  public String[] toRow() {
-    return new String[]{userName, email, country, hash};
+  public PasswordTableRow email(String email) {
+    setEmail(email);
+    return this;
   }
 
-  public String getUserName() {
-    return userName;
+  public PasswordTableRow url(String url) {
+    setUrl(url);
+    return this;
   }
 
-  public void setUserName(String userName) {
-    this.userName = userName;
+  public String getUserId() {
+    return userId;
   }
 
-  public String getHash() {
-    return hash;
+  public void setUserId(String userId) {
+    this.userId = userId;
   }
 
-  public void setHash(String hash) {
-    this.hash = hash;
+  public String getId() {
+    return id;
   }
 
-  public String getCountry() {
-    return country;
+  public String getTitle() {
+    return title;
   }
 
-  public void setCountry(String country) {
-    this.country = country;
+  public void setTitle(String title) {
+    this.title = title;
+  }
+
+  public String getDesc() {
+    return desc;
+  }
+
+  public void setDesc(String desc) {
+    this.desc = desc;
   }
 
   public String getEmail() {
@@ -60,13 +70,36 @@ public class UserTableRow {
     this.email = email;
   }
 
+  public String getUrl() {
+    return url;
+  }
+
+  public void setUrl(String url) {
+    this.url = url;
+  }
+
+  public String getPassword() {
+    return password;
+  }
+
+  public void setPassword(String password) {
+    this.password = password;
+  }
+
+  public RotType getRotType() {
+    return rotType;
+  }
+
   @Override
   public String toString() {
-    return "UserTableRow{" +
-        "userName='" + userName + '\'' +
-        ", hash='" + hash + '\'' +
-        ", country='" + country + '\'' +
+    return "PasswordTableRow{" +
+        "id='" + id + '\'' +
+        ", title='" + title + '\'' +
+        ", desc='" + desc + '\'' +
         ", email='" + email + '\'' +
+        ", url='" + url + '\'' +
+        ", password='" + password + '\'' +
+        ", rotType=" + rotType +
         '}';
   }
 }

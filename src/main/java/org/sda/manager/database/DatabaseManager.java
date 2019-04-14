@@ -30,10 +30,10 @@ public final class DatabaseManager {
           + "SdaPasswordManager\\src\\main\\resources\\passwords.csv");
   private static final DatabaseManager INSTANCE = new DatabaseManager();
   private static final String[] USERS_HEADERS =
-      new String[]{"name", "email", "country", "hash"};
+      new String[]{"id", "name", "email", "country", "hash"};
 
   private static final String[] PASSWORDS_HEADERS = new String[]{
-      "ID", "Title", "Desc", "Email", "URL", "Password", "ROT"
+      "ID", "USER_ID", "Title", "Desc", "Email", "URL", "Password", "ROT"
   };
 
   private DatabaseManager() {
@@ -53,11 +53,16 @@ public final class DatabaseManager {
     ) {
       List<String[]> allRecords = csvReader.readAll();
       for (String[] nextRecord : allRecords) {
-        String name = nextRecord[0];
-        String email = nextRecord[1];
-        String country = nextRecord[2];
-        String hash = nextRecord[3];
-        userDataList.add(new UserTableRow(name, email, country, hash));
+        if (nextRecord.length != 5) {
+          logger.warn("Invalid number of columns in USERS table.");
+          break;
+        }
+        String id = nextRecord[0];
+        String name = nextRecord[1];
+        String email = nextRecord[2];
+        String country = nextRecord[3];
+        String hash = nextRecord[4];
+        userDataList.add(new UserTableRow(id, name, email, country, hash));
       }
     } catch (NoSuchFileException e) {
       logger.warn("File: " + WRITE_USERS_CSV_FILE_PATH + " was not found.", e);
@@ -145,6 +150,10 @@ public final class DatabaseManager {
     ) {
       List<String[]> allRecords = csvReader.readAll();
       for (String[] nextRecord : allRecords) {
+        if (nextRecord.length != 8) {
+          logger.warn("Invalid number of columns in PASSWORDS table.");
+          break;
+        }
         String id = nextRecord[0];
         String uId = nextRecord[1];
         String title = nextRecord[2];
@@ -153,9 +162,43 @@ public final class DatabaseManager {
         String url = nextRecord[5];
         String password = nextRecord[6];
         String rot = nextRecord[7];
-        if (userId.equals(uId)) {
-          passwords.add(new PasswordTableRow(id, uId, title, RotType.valueOf(rot), password));
+        if (userId.equalsIgnoreCase(uId)) {
+          PasswordTableRow tableRow =
+              new PasswordTableRow(id, uId, title, RotType.valueOf(rot), password)
+                  .desc(desc).email(email).url(url);
+          passwords.add(tableRow);
         }
+      }
+    } catch (NoSuchFileException e) {
+      logger.warn("File: " + PASSWORDS_CSV_FILE_PATH + " was not found.", e);
+    } catch (IOException e) {
+      logger.warn("Unexpected exception while reading file: "
+          + PASSWORDS_CSV_FILE_PATH, e);
+    }
+    return passwords;
+  }
+
+  List<PasswordTableRow> getAllPasswords() {
+    List<PasswordTableRow> passwords = new ArrayList<>();
+    try (
+        BufferedReader reader = Files.newBufferedReader(WRITE_PASSWORDS_CSV_FILE_PATH);
+        CSVReader csvReader = new CSVReaderBuilder(reader)
+            .withSkipLines(1).build()
+    ) {
+      List<String[]> allRecords = csvReader.readAll();
+      for (String[] nextRecord : allRecords) {
+        String id = nextRecord[0];
+        String uId = nextRecord[1];
+        String title = nextRecord[2];
+        String desc = nextRecord[3];
+        String email = nextRecord[4];
+        String url = nextRecord[5];
+        String password = nextRecord[6];
+        String rot = nextRecord[7];
+        PasswordTableRow tableRow =
+            new PasswordTableRow(id, uId, title, RotType.valueOf(rot), password)
+                .desc(desc).email(email).url(url);
+        passwords.add(tableRow);
       }
     } catch (NoSuchFileException e) {
       logger.warn("File: " + PASSWORDS_CSV_FILE_PATH + " was not found.", e);

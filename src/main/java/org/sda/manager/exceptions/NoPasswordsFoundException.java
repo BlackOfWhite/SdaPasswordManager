@@ -1,8 +1,8 @@
 package org.sda.manager.exceptions;
 
-public class UserNotFoundException extends Exception {
+public class NoPasswordsFoundException extends Exception {
 
-  public UserNotFoundException() {
+  public NoPasswordsFoundException() {
     super();
     System.out.println("User not found.");
   }
